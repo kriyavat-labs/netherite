@@ -1,42 +1,25 @@
-import { Pool } from "pg";
-import dotenv from "dotenv";
+import express from "express";
+import sequelize from "./config/database";
+import User from "./models/User";
 
-dotenv.config();
+const app = express();
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT || "5432"),
-});
+const PORT = process.env.BE_PORT || 3000;
 
-const createUsersTable = `
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`;
-
-async function initDB() {
+async function initDatabase() {
   try {
-    const client = await pool.connect();
-    console.log("success connection");
+    await sequelize.authenticate();
+    console.log("Success!");
 
-    await client.query(createUsersTable);
-    console.log("table created");
-
-    client.release();
+    await sequelize.sync({ alter: true });
+    console.log("db sync done...");
   } catch (error) {
-    console.error("error initialising db");
-    throw error;
+    console.log("error connecting...");
   }
 }
 
-initDB().catch(console.error);
+initDatabase();
 
-export { pool };
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
